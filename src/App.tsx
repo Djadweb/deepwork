@@ -1,6 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react'
 import SettingsModal from './components/SettingsModal'
 import HistoryGrid from './components/HistoryGrid'
+import TodoList from './components/TodoList'
 
 import './index.css'
 
@@ -203,6 +204,10 @@ export default function App() {
   useEffect(() => {
     // keyboard: space toggles start/pause
     const onKey = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in input fields
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
+      
       if (e.code === 'Space') {
         e.preventDefault()
         toggleRunning()
@@ -275,6 +280,8 @@ export default function App() {
           <h3>time spent deep working</h3>
           <HistoryGrid totalMinutes={deepMinutes} />
         </section>
+
+        <TodoList />
       </main>
 
       {showSettings && (
