@@ -278,7 +278,7 @@ export default function App() {
 
         <section className="history">
           <h3>time spent deep working</h3>
-          <HistoryGrid totalMinutes={deepMinutes} />
+          <HistoryGrid totalSeconds={totalDeepSeconds} />
         </section>
 
         <TodoList />

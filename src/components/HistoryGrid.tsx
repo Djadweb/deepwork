@@ -1,9 +1,10 @@
 import React from 'react'
 
-export default function HistoryGrid({ totalMinutes }: { totalMinutes: number }) {
+export default function HistoryGrid({ totalSeconds }: { totalSeconds: number }) {
   // represent each square as 15 minutes of deep work
   const minutesPerSquare = 15
-  const filledCount = Math.floor(totalMinutes / minutesPerSquare)
+  // compute filled squares from seconds to avoid minute-rounding off-by-one
+  const filledCount = Math.floor(totalSeconds / (minutesPerSquare * 60))
 
   // capacity: how many squares to render in total (fixed, larger grid)
   const capacity = 400 // e.g. 20 cols x 20 rows = 400 squares
