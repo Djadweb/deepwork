@@ -11,6 +11,7 @@ const LS_KEYS = {
   deepDefault: 'dw:deepDefault',
   restDefault: 'dw:restDefault',
   totalDeepSeconds: 'dw:totalDeepSeconds',
+  sessionsByDay: 'dw:sessionsByDay',
   mode: 'dw:mode',
   remainingDeep: 'dw:remainingDeep',
   remainingRest: 'dw:remainingRest',
@@ -58,6 +59,11 @@ export default function App() {
   const [totalDeepSeconds, setTotalDeepSeconds] = useState<number>(() => {
     const v = localStorage.getItem(LS_KEYS.totalDeepSeconds)
     return v ? Number(v) : 0
+  })
+  const totalDeepSecondsRef = useRef<number>(totalDeepSeconds)
+  const [sessionsByDay, setSessionsByDay] = useState<Record<string, number>>(() => {
+    const v = localStorage.getItem(LS_KEYS.sessionsByDay)
+    return v ? JSON.parse(v) : {}
   })
 
   const elapsedRef = useRef(0)
@@ -142,6 +148,14 @@ export default function App() {
   }, [totalDeepSeconds])
 
   useEffect(() => {
+    totalDeepSecondsRef.current = totalDeepSeconds
+  }, [totalDeepSeconds])
+
+  useEffect(() => {
+    localStorage.setItem(LS_KEYS.sessionsByDay, JSON.stringify(sessionsByDay))
+  }, [sessionsByDay])
+
+  useEffect(() => {
     if (running) {
       localStorage.setItem(LS_KEYS.lastTick, String(Date.now()))
       intervalRef.current = window.setInterval(() => {
@@ -149,7 +163,17 @@ export default function App() {
         if (mode === 'deep') {
           setRemainingDeep(d => {
             if (d <= 1) {
-              setTotalDeepSeconds(t => t + (elapsedRef.current + 1))
+              const added = elapsedRef.current + 1
+              const newTotal = totalDeepSecondsRef.current + added
+              setTotalDeepSeconds(newTotal)
+              try { localStorage.setItem(LS_KEYS.totalDeepSeconds, String(newTotal)) } catch (e) {}
+              // increment today's session count
+              const key = new Date().toISOString().slice(0, 10)
+              setSessionsByDay(s => {
+                const next = { ...s, [key]: (s[key] || 0) + 1 }
+                try { localStorage.setItem(LS_KEYS.sessionsByDay, JSON.stringify(next)) } catch (e) {}
+                return next
+              })
               elapsedRef.current = 0
               localStorage.setItem(LS_KEYS.elapsed, '0')
               setRunning(false)
@@ -242,6 +266,9 @@ export default function App() {
 
   const deepMinutes = Math.floor(totalDeepSeconds / 60)
 
+  const todayKey = new Date().toISOString().slice(0, 10)
+  const todaySessions = sessionsByDay[todayKey] || 0
+
   const currentRemaining = mode === 'deep' ? remainingDeep : remainingRest
   useEffect(() => {
     const timeText = secToClock(currentRemaining || 0)
@@ -278,6 +305,10 @@ export default function App() {
 
         <section className="history">
           <h3>time spent deep working</h3>
+          <div className="daily-counter" aria-hidden={false}>
+            <div className="label">sessions today</div>
+            <div className="count" aria-live="polite">{todaySessions}</div>
+          </div>
           <HistoryGrid totalSeconds={totalDeepSeconds} />
         </section>
 
